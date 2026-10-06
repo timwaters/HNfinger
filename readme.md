@@ -2,7 +2,9 @@ title
 
 ## About
 
-Like many on HN I was worried about AI slop masquerading as human, and wondered if some users had changed.  I wanted to look at two things, did a user change their writing style and could this new style be identified as LLM text. This project can only really answer the first facet. The assumption is that if a user changed after mass LLM adoption it might be possible that the change was due to them using LLM generated text. 
+Like many on HN I was worried about AI slop masquerading as human, and wondered if some users were using LLMs in their comments. Its a kind of pattern recognition for me, I can smell when something seems off and LLM text does seem similar in many ways. 
+
+I wanted to look at two things, did a user change their writing style and could this new style be identified as LLM text. This project can only really answer the first facet. The assumption is that if a user changed after the date of mass LLM adoption it might be possible that the change was due to them using LLM generated text. 
 
 This project shows how a user has changed their style over time, and shows the top 100 of users who may have changed the most after 2023.  It uses the Clickhouse Playground to query Hacker News comments. 
 
@@ -62,11 +64,13 @@ Baseline calculation. While Jan 2023 was set as the time of mass LLM adoption as
 
 Change in topics. Since 2023 was a watershed moment, the topics that were discussed on HN also changed.  The vocabulary we use when talking about LLMs have changed the overall vocabulary. It could be that any changes before and after may reflect a change in topics. 
 
-Change in usage: Some types of comments, like the replies under "Ask HN: Who Wants To Be Hired" posts are formatted differently than usual comments and people will use different words. So if a user talked normally before and is now just using it to find jobs, it might flag them up. I also saw similar things with Show HN's. As users grow into greybeards they may promote their projects or stop doing so. Users also appear to be posting to hire people where before they may have been commenting normally. Additionally many users are changed their usage into being helpful users, showing duplication submissions, links to archives, messages about the guidelines etc. 
+Change in usage: Some types of comments, like the replies under "Ask HN: Who Wants To Be Hired" posts are formatted differently than usual comments and people will use different words. So if a user talked normally before and is now just using it to find jobs, it would probably show this change. I also saw similar things with Show HN's. Users also appear to be posting to hire people where before they may have been commenting normally and vice versa. As users grow into greybeards they may promote their projects or stop doing so.  Additionally many of the top users are changed their usage into being helpful users, showing duplication submissions, links to archives, messages about the guidelines etc. 
 
 ## My own LLM usage for this project:
 
 I used gtp-6.1-sol to help write the sql queries and the python batch script, with about 26 requests and 290K tokens spent costing around 40 cents. 
+
+I don't use LLM to write HN comments, and this readme is 100% my own words.
 
 
 TODO
