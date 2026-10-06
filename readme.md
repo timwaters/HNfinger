@@ -35,10 +35,14 @@ The thumbnail / stylometric method used here is simple. Better methods could and
 
 For example, Burrows Delta calculates a reference text distribution. For example from all comments from all users and that method would be good to see which users are most similar to other users. Ideally we want to determine two things, did the user change their writing and is the new writing identified as LLM text, so any similarity method can only really help with the former. 
 
-## Results
+## Results individual 
+
+outlining how to interpret own users data
+
+## Results Top 100
 
 CAVEAT: This data is almost probably wrong and should not imply anything about the users in general or any specific user. 
-CAVEAT: People should adapt and investigate themselves if they want to take this further. 
+CAVEAT: People should adapt and investigate themselves if they want to take this further.  I am no expert in stylometry or LLM detection, or even performant SQL for that matter!
 
 Overall, it looks like most active old users are not using LLMs.
 
