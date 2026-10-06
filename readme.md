@@ -2,18 +2,22 @@ title
 
 ## About
 
-Note that users are not allowed to use LLM text by the HackerNews rules. See more about this and other considerations later on:
+Like many on HN I was worried about AI slop masquerading as human, and wondered if some users had changed.  I wanted to look at two things, did a user change their writing style and could this new style be identified as LLM text. This project can only really answer the first facet. The assumption is that if a user changed after mass LLM adoption it might be possible that the change was due to them using LLM generated text. 
 
-Inspired by this post https://news.ycombinator.com/item?id=43705632 and by the comment underneath, by zX41ZdbW  https://news.ycombinator.com/item?id=43734314
-This uses Clickhouse playground, and the dataset added by zX41ZdbW "hackernews_history" is used here
+This project shows how a user has changed their style over time, and shows the top 100 of users who may have changed the most after 2023.  It uses the Clickhouse Playground to query Hacker News comments. 
 
-Free users of the playground cannot create tables, so we have to change the suggested query but substantially it's similar.
+Note that users are not allowed to use LLM generated text by the Hacker News rules. See more about this and other considerations later on.
 
-Also inspired by https://news.ycombinator.com/item?id=46829029 which finally encouraged me to try this and put it behind a little web page. 
+This project was inspired by this post https://news.ycombinator.com/item?id=43705632 and by the comment underneath, by zX41ZdbW  https://news.ycombinator.com/item?id=43734314
+The dataset, added by zX41ZdbW "hackernews_history" is used. 
 
-The hackernews_history table may contain multiple versions of a comment. A comment may have been flag killed or deleted or otherwise edited. So there's some deduplication so that only one comment per comment row is recorded. There is a `hackernews` table on clickhouse playground without the history but this hasn't been updated since 2023.
+Free users of the playground cannot create tables, so we have to change the example query to use sub queries but substantially it's similar. 
 
-Words within a comment are split, hashed and put into one of 512 bins. 
+The project was also inspired by https://news.ycombinator.com/item?id=46829029 which finally encouraged me to try this and put it behind a little web page.  
+
+The hackernews_history table may contain multiple versions of a comment. A comment may have been flag killed or deleted or otherwise edited. So there's some deduplication so that only one comment text per comment row is recorded. There is a `hackernews` table on clickhouse playground without the history but this hasn't been updated since 2023.
+
+The method is a simple hashed-word cosine similarity. Words within a comment are split, hashed and put into one of 512 bins. 
 
 Only users with comments before Jan 2023 (mass adoption of LLMs) are counted.
 
@@ -25,40 +29,45 @@ There are two queries: for a specific user, and for a batch of users. There is a
 
 For a specific user, a cumulative score of before 2023 is calculated and the output shows each active 6 month block before and after and gives similarity to that.
 
+The thumbnail / stylometric method used here is simple. Better methods could and should be used. 
 
+For example, Burrows Delta calculates a reference text distribution. For example from all comments from all users and that method would be good to see which users are most similar to other users. Ideally we want to determine two things, did the user change their writing and is the new writing identified as LLM text, so any similarity method can only really help with the former. 
 
 ## Results
 
-Generally it looks like most active old users are not using LLMs.
+CAVEAT: This data is almost probably wrong and should not imply anything about the users in general or any specific user. 
+CAVEAT: People should adapt and investigate themselves if they want to take this further. 
 
-From the top 100 users, the range was 88 / 100 to 54 / 100. The general picture with some closer examination of these accounts is that they do not seem to show LLM usage, but more like a change in how they comment and use the site (see below)
+Overall, it looks like most active old users are not using LLMs.
+
+From the top 100 users, the range was 88 out of 100 to, at the top, 54 out of 100. The general picture with some closer examination of these accounts is that they do not seem to show LLM usage, but more like a change in how they comment and use the site (see below)
 
 
 ## Discussion
 
-There was more variation when the number of words (tokens) in a time period was reduced, this lead to more active periods. These additional active periods had less activity and so the words they wrote in these times could carry more weight. I decided 500 words in 6 months was a good compromise, but it might be smoothing over actual differences. 
+There was more variation when the number of words (tokens) in a time period was reduced, and this also lead to more "active" periods. These additional time periods had less activity and so the words written in these times would carry more weight. I decided 500 words in 6 months was a good compromise, but it might be smoothing over actual differences. 
 
 Probably more change will be calculated if there are less sample buckets - if the user signed up in 2022 and only posted a few times before and since, for example. Maybe instead of 6 months periods, we could look at 1 year. 
 
 The limit of 500 words per 6 months may filter out some LLM usage or small amount of text in many comments. 
-Performance, zX41ZdbW originally used 128 bins which works fine and is quicker or reduce RAM usage but might lead to different words being counted as the same one. 
-
+Performance, zX41ZdbW originally used 128 bins which works fine and is quicker and reduces RAM usage but might lead to different words being counted as the same one. 
 
 Note that users are not allowed to use AI generated text in comments, but the no LLM rule was introduced in 2026 (6 months ago https://news.ycombinator.com/item?id=47340079 )
 
-Before that some users may have used it, or may have mixed in with their normal writing from time to time. Determining that would be tricky. 
+Before that some users may have used it, or may have mixed in with their normal writing from time to time. Determining that might be tricky. 
 
 Logically and generally most older users are not going to be changing their usage of social media substantially.
 
-While Jan 2023 was set as the time of mass LLM adoption as this was when the chatGPT was released into the wild, for normal users (An AI Eternal September), it's probably only in more recent years that more and more people are actually using it.  
+Baseline calculation. While Jan 2023 was set as the time of mass LLM adoption as this was when the chatGPT was released into the wild (An AI Eternal September), for normal users it's probably only in more recent years 25/26 that more and more people are actually using it for more things.
 
-Change in usage: Some types of comments, like the replies under "Ask HN: Who Wants To Be Hired" posts are formatted differently than usual comments and people will use different words. So if a user talked normally before and is now just using it to find jobs, it might flag them up. I also saw similar things with Show HN's. As users grow from junior users they may show off and promote their projects. Users also appear to be posting to hire people where before they may have been commenting normally. Additionally many users are changed to being helpful, showing duplication submissions, links to archives, messages about the guidelines etc. 
+Change in topics. Since 2023 was a watershed moment, the topics that were discussed on HN also changed.  The vocabulary we use when talking about LLMs have changed the overall vocabulary. It could be that any changes before and after may reflect a change in topics. 
 
-## LLM usages.
+Change in usage: Some types of comments, like the replies under "Ask HN: Who Wants To Be Hired" posts are formatted differently than usual comments and people will use different words. So if a user talked normally before and is now just using it to find jobs, it might flag them up. I also saw similar things with Show HN's. As users grow into greybeards they may promote their projects or stop doing so. Users also appear to be posting to hire people where before they may have been commenting normally. Additionally many users are changed their usage into being helpful users, showing duplication submissions, links to archives, messages about the guidelines etc. 
 
-I used gtp-6.1-sol to help write the sql query and the python batch process. 
+## My own LLM usage for this project:
 
-I used https://github.com/SerJaimeLannister/hn-words to inspire for front end. 
+I used gtp-6.1-sol to help write the sql queries and the python batch script, with about 26 requests and 290K tokens spent costing around 40 cents. 
+
 
 TODO
 
