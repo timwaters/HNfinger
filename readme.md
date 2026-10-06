@@ -1,0 +1,69 @@
+title
+
+## About
+
+Note that users are not allowed to use LLM text by the HackerNews rules. See more about this and other considerations later on:
+
+Inspired by this post https://news.ycombinator.com/item?id=43705632 and by the comment underneath, by zX41ZdbW  https://news.ycombinator.com/item?id=43734314
+This uses Clickhouse playground, and the dataset added by zX41ZdbW "hackernews_history" is used here
+
+Free users of the playground cannot create tables, so we have to change the suggested query but substantially it's similar.
+
+Also inspired by https://news.ycombinator.com/item?id=46829029 which finally encouraged me to try this and put it behind a little web page. 
+
+The hackernews_history table may contain multiple versions of a comment. A comment may have been flag killed or deleted or otherwise edited. So there's some deduplication so that only one comment per comment row is recorded. There is a `hackernews` table on clickhouse playground without the history but this hasn't been updated since 2023.
+
+Words within a comment are split, hashed and put into one of 512 bins. 
+
+Only users with comments before Jan 2023 (mass adoption of LLMs) are counted.
+
+Users must be somewhat active users. 
+
+It counts how many words users make in a 6 month blocks. Users must have at least three 6 month blocks before and after 2023 where they have written more than 500 words. 
+
+There are two queries: for a specific user, and for a batch of users. There is a python script that performs batches and then merges together the results, giving a final top_100.csv file of the users most likely to have changed style from before and after 2023. 
+
+For a specific user, a cumulative score of before 2023 is calculated and the output shows each active 6 month block before and after and gives similarity to that.
+
+
+
+## Results
+
+Generally it looks like most active old users are not using LLMs.
+
+From the top 100 users, the range was 88 / 100 to 54 / 100. The general picture with some closer examination of these accounts is that they do not seem to show LLM usage, but more like a change in how they comment and use the site (see below)
+
+
+## Discussion
+
+There was more variation when the number of words (tokens) in a time period was reduced, this lead to more active periods. These additional active periods had less activity and so the words they wrote in these times could carry more weight. I decided 500 words in 6 months was a good compromise, but it might be smoothing over actual differences. 
+
+Probably more change will be calculated if there are less sample buckets - if the user signed up in 2022 and only posted a few times before and since, for example. Maybe instead of 6 months periods, we could look at 1 year. 
+
+The limit of 500 words per 6 months may filter out some LLM usage or small amount of text in many comments. 
+Performance, zX41ZdbW originally used 128 bins which works fine and is quicker or reduce RAM usage but might lead to different words being counted as the same one. 
+
+
+Note that users are not allowed to use AI generated text in comments, but the no LLM rule was introduced in 2026 (6 months ago https://news.ycombinator.com/item?id=47340079 )
+
+Before that some users may have used it, or may have mixed in with their normal writing from time to time. Determining that would be tricky. 
+
+Logically and generally most older users are not going to be changing their usage of social media substantially.
+
+While Jan 2023 was set as the time of mass LLM adoption as this was when the chatGPT was released into the wild, for normal users (An AI Eternal September), it's probably only in more recent years that more and more people are actually using it.  
+
+Change in usage: Some types of comments, like the replies under "Ask HN: Who Wants To Be Hired" posts are formatted differently than usual comments and people will use different words. So if a user talked normally before and is now just using it to find jobs, it might flag them up. I also saw similar things with Show HN's. As users grow from junior users they may show off and promote their projects. Users also appear to be posting to hire people where before they may have been commenting normally. Additionally many users are changed to being helpful, showing duplication submissions, links to archives, messages about the guidelines etc. 
+
+## LLM usages.
+
+I used gtp-6.1-sol to help write the sql query and the python batch process. 
+
+I used https://github.com/SerJaimeLannister/hn-words to inspire for front end. 
+
+TODO
+
+Webpage.
+
+front + check user
+
+second page, list top 

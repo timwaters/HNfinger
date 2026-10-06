@@ -1,7 +1,7 @@
 WITH
     512 AS vec_size,
     toDateTime('2023-01-01 00:00:00') AS cutoff,
-    256 AS batch_count,
+    24 AS batch_count,
     0 AS batch_number,
 
     first_versions AS
