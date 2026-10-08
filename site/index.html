@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html> 
+<head>
+   <meta charset="UTF-8">
+    <title>Has the Style of Your Hacker News Comments Changed Since the Arrival of  LLMs?</title>
+     <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      form {
+        margin-top: 20px;
+      }
+      input[type="text"] {
+        padding: 5px;
+        width: 200px;
+      }
+      input[type="submit"] {
+        padding: 5px 10px;
+      }
+      fieldset {
+        border: 1px solid #ccc;
+        padding: 10px;
+      }
+      legend {
+        font-weight: bold;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th, td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+     </style>
+
+
+
+</head>
+<body>
+    <h1>Has the Style of Your Hacker News Comments Changed Since the Arrival of LLMs?</h1>
+    <p>This tool looks at the fingerprints of HN users, comparing the similarity of their writing style before 2023 with after 2023. It's querying the Clickhouse Playground "hackernews_history" table. </p>
+    <p>It uses hashed-word cosine similarity. Only a user with comments before Jan 2023 (mass adoption of LLMs) can be counted. Users must be active users, and must have at least a half year period before and after 2023 where they have written more than 500 words.
+    <br />It's going to be flawed and inaccurate and simple but I find it interesting!</p>
+    <p>The basic idea was that if a user changed to posting comments using LLM text it should be identifiable using stylometric similarity score with their previous comments. 
+     </p>
+      <p>
+      In reality, users with the greatest change in style <b>do not</b> seem to be using LLM! 
+    <p>Click: <a href="top100.html">Top 100 users</a> to see the top 100 users who may have changed the most compared to their pre-2023 usage  </p>
+      
+    Read more about this project here, link to blogpost<a href=""></a></p>
+   
+    <form id="the-form">
+    <fieldset >
+      <legend>HN Fingerprint Change</legend>
+      <label for="username">HN Username:</label>
+      <input type="text" id="username" name="username" required>
+      <input id="submit-button" type="submit" value="Submit">
+      </fieldset>
+    </form>
+
+   <div id="status" role="status" aria-live="polite"></div>
+
+  <table id="results" hidden>
+    <thead>
+      <tr>
+        <th>Period</th>
+        <th>Tokens</th>
+        <th>Similarity / 100</th>
+        <th>Difference from before</th>
+      </tr>
+    </thead>
+    <tbody id="results-body"></tbody>
+  </table>
+
+
+<script>
+    const QUERY = `
+WITH
+    {username:String} AS target_author,
+    512 AS vec_size,
+    toDateTime('2023-01-01 00:00:00') AS cutoff,
+
+    first_versions AS
+    (
+        SELECT
+            id,
+            argMin(
+                tuple(by, time, text, deleted, dead),
+                update_time
+            ) AS first_version
+        FROM hackernews_history
+        WHERE type = 'comment'
+          AND by = target_author
+        GROUP BY id
+    ),
+
+    comments AS
+    (
+        SELECT
+            id,
+            first_version.2 AS comment_time,
+            first_version.3 AS comment_text
+        FROM first_versions
+        WHERE first_version.4 = 0
+          AND first_version.5 = 0
+          AND trimBoth(first_version.3) != ''
+          AND lower(trimBoth(first_version.3))
+              NOT IN ('[flagged]', '[dead]')
+    ),
+
+    bucket_counts AS
+    (
+        SELECT
+            toStartOfInterval(
+                comment_time,
+                INTERVAL 6 MONTH
+            ) AS half_year,
+
+            cityHash64(
+                arrayJoin(
+                    tokens(
+                        lower(
+                            decodeHTMLComponent(
+                                extractTextFromHTML(comment_text)
+                            )
+                        )
+                    )
+                )
+            ) % vec_size AS bucket,
+
+            count() AS n
+
+        FROM comments
+        GROUP BY half_year, bucket
+    ),
+
+    eligible_buckets AS
+    (
+        SELECT half_year, bucket, n
+        FROM
+        (
+            SELECT
+                half_year,
+                bucket,
+                n,
+                sum(n) OVER (
+                    PARTITION BY half_year
+                ) AS period_token_count
+            FROM bucket_counts
+        )
+        WHERE period_token_count > 500
+    ),
+
+    labelled_buckets AS
+    (
+        SELECT
+            arrayJoin(
+                [
+                    concat('half_year:', toString(half_year)),
+                    if(
+                        half_year < cutoff,
+                        'before_2023',
+                        'after_2023'
+                    )
+                ]
+            ) AS period,
+            bucket,
+            n
+        FROM eligible_buckets
+    ),
+
+    combined_buckets AS
+    (
+        SELECT
+            period,
+            bucket,
+            sum(n) AS n
+        FROM labelled_buckets
+        GROUP BY period, bucket
+    ),
+
+    profiles AS
+    (
+        SELECT
+            period,
+            sum(n) AS token_count,
+
+            mapFromArrays(
+                groupArray(bucket),
+                groupArray(n)
+            ) AS histogram,
+
+            arrayMap(
+                i -> toFloat64(histogram[toUInt64(i)]),
+                range(vec_size)
+            ) AS vec
+
+        FROM combined_buckets
+        GROUP BY period
+    ),
+
+    baseline AS
+    (
+        SELECT vec
+        FROM profiles
+        WHERE period = 'before_2023'
+    )
+
+SELECT
+    p.period,
+    p.token_count,
+
+    round(
+        100 * (1 - cosineDistance(p.vec, b.vec)),
+        3
+    ) AS similarity_score,
+
+    round(
+        100 * cosineDistance(p.vec, b.vec),
+        3
+    ) AS difference_from_before
+
+FROM profiles AS p
+CROSS JOIN baseline AS b
+
+ORDER BY
+    if(startsWith(p.period, 'half_year:'), 1, 0),
+    p.period
+
+FORMAT JSON
+`;
+
+ 
+    async function fetchUserStats(username) {
+      const url = new URL("https://play.clickhouse.com");
+
+      url.searchParams.set("user", "play");
+      url.searchParams.set("password", "");
+
+      url.searchParams.set("param_username", username);
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 180_000);
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=UTF-8"
+          },
+          body: QUERY,
+          signal: controller.signal
+        });
+
+        const text = await response.text();
+
+        if (!response.ok) {
+          throw new Error(
+            `ClickHouse HTTP ${response.status}\n${text}`
+          );
+        }
+
+        let result;
+
+        try {
+          result = JSON.parse(text);
+        } catch {
+          throw new Error(
+            "ClickHouse did not return valid JSON:\n" +
+            text.slice(0, 2000)
+          );
+        }
+
+        if (!Array.isArray(result.data)) {
+          throw new Error("Unexpected response: missing data array.");
+        }
+
+        return result.data;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function renderTable(rows) {
+      const table = document.querySelector("#results");
+      const body = document.querySelector("#results-body");
+
+      body.replaceChildren();
+
+      for (const row of rows) {
+        const tr = document.createElement("tr");
+
+        const values = [
+          row.period,
+          row.token_count,
+          row.similarity_score,
+          row.difference_from_before
+        ];
+
+        for (const value of values) {
+          const td = document.createElement("td");
+
+          td.textContent = String(value ?? "");
+          tr.appendChild(td);
+        }
+
+        body.appendChild(tr);
+      }
+
+      table.hidden = rows.length === 0;
+    }
+  
+
+    document.querySelector("#the-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const username =
+          document.querySelector("#username").value.trim();
+
+        if (!username) return;
+
+        const button = document.querySelector("#submit-button");
+        const status = document.querySelector("#status");
+
+        button.disabled = true;
+        status.textContent = "Running query...";
+        renderTable([]);
+
+        try {
+          const rows = await fetchUserStats(username);
+
+          renderTable(rows);
+
+          status.textContent = rows.length
+            ? ""
+            : "No results. The user may have not enough pre-2023 or post 2023 comments";
+
+        } catch (error) {
+          status.textContent =
+            error.name === "AbortError"
+              ? "Request timed out after three minutes."
+              : error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+  </script>
+
+</body>
+</html>
