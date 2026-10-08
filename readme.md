@@ -1,4 +1,6 @@
-title
+# Has the writing style of users changed since the advent of LLMs?
+
+Could this be a potential method to detect users using LLM?  Or maybe just useful way to gain insight into how users change how they write?
 
 ## About
 
@@ -11,13 +13,13 @@ This project shows how a user has changed their style over time, and shows the t
 Note that users are not allowed to use LLM generated text by the Hacker News rules. See more about this and other considerations later on.
 
 This project was inspired by this post https://news.ycombinator.com/item?id=43705632 and by the comment underneath, by zX41ZdbW  https://news.ycombinator.com/item?id=43734314
-The dataset, added by zX41ZdbW "hackernews_history" is used. 
+The dataset, added by zX41ZdbW `hackernews_history` is used. 
 
 Free users of the playground cannot create tables, so we have to change the example query to use sub queries but substantially it's similar. 
 
 The project was also inspired by https://news.ycombinator.com/item?id=46829029 which finally encouraged me to try this and put it behind a little web page.  
 
-The hackernews_history table may contain multiple versions of a comment. A comment may have been flag killed or deleted or otherwise edited. So there's some deduplication so that only one comment text per comment row is recorded. There is a `hackernews` table on clickhouse playground without the history but this hasn't been updated since 2023.
+The `hackernews_history` table may contain multiple versions of a comment. A comment may have been flag killed or deleted or otherwise edited. So there's some deduplication so that only one comment text per comment row is recorded. There is a `hackernews` table on clickhouse playground without the history but this hasn't been updated since 2023.
 
 The method is a simple hashed-word cosine similarity. Words within a comment are split, hashed and put into one of 512 bins. 
 
@@ -41,10 +43,12 @@ outlining how to interpret own users data
 
 ## Results Top 100
 
+See the `top_100.csv` file. 
+
 CAVEAT: This data is almost probably wrong and should not imply anything about the users in general or any specific user. 
 CAVEAT: People should adapt and investigate themselves if they want to take this further.  I am no expert in stylometry or LLM detection, or even performant SQL for that matter!
 
-Overall, it looks like most active old users are not using LLMs.
+Overall, it looks like most active users are not using LLMs.
 
 From the top 100 users, the range was 88 out of 100 to, at the top, 54 out of 100. The general picture with some closer examination of these accounts is that they do not seem to show LLM usage, but more like a change in how they comment and use the site (see below)
 
@@ -72,15 +76,6 @@ Change in usage: Some types of comments, like the replies under "Ask HN: Who Wan
 
 ## My own LLM usage for this project:
 
-I used gtp-6.1-sol to help write the sql queries and the python batch script, with about 26 requests and 290K tokens spent costing around 40 cents. 
+I used gtp-6.1-sol to help write the sql queries, the python batch script and the javascript in the html files. Totalling about 30 requests and 290K tokens spent 
 
-I don't use LLM to write HN comments, and this readme is 100% my own words.
-
-
-TODO
-
-Webpage.
-
-front + check user
-
-second page, list top 
+I don't use LLM to write HN comments, and this readme is 100% my own words :smile:
