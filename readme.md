@@ -1,19 +1,22 @@
 # Has the writing style of users changed since the advent of LLMs?
 
-Could this be a potential method to detect users using LLM?  Or maybe just useful way to gain insight into how users change how they write?
+An investigation into whether its possible to detect if a user has changed their writing style.  Could this be a potential method to detect users using LLM?  Or maybe just useful way to gain insight into how users change how they write? Given enough words a body of text can be "fingerprinted"  - in better detail this is also known as "stylometry" - the measurement of a writing style, but in this study it's a bit more simple.  Can we detect if fingerprints change over time? 
+
 
 ## About
 
-Like many on HN I was worried about AI slop masquerading as human, and wondered if some users were using LLMs in their comments. Its a kind of pattern recognition for me, I can smell when something seems off and LLM text does seem similar in many ways. 
+Like many on HN I was worried about AI slop masquerading as human, and wondered if some users were using LLMs in their comments. Detecting LLM writing is a kind of pattern recognition for me, I can smell when something seems off although its not really something I can set into a set of rules for detection. 
 
-I wanted to look at two things, did a user change their writing style and could this new style be identified as LLM text. This project can only really answer the first facet. The assumption is that if a user changed after the date of mass LLM adoption it might be possible that the change was due to them using LLM generated text. 
+I wanted to look at two things, did a user change their writing style and could this new style be identified as LLM text. This project can only really answer the first part. The assumption is that if a user changed after the date of mass LLM adoption it might be possible that the change was due to them using LLM generated text. 
 
 This project shows how a user has changed their style over time, and shows the top 100 of users who may have changed the most after 2023.  It uses the Clickhouse Playground to query Hacker News comments. 
 
 Note that users are not allowed to use LLM generated text by the Hacker News rules. See more about this and other considerations later on.
 
 This project was inspired by this post https://news.ycombinator.com/item?id=43705632 and by the comment underneath, by zX41ZdbW  https://news.ycombinator.com/item?id=43734314
-The dataset, added by zX41ZdbW `hackernews_history` is used. 
+These tools and investigations looked at the stylometric fingerprint signature of users and compared it to users with similar writing styles.  
+
+The dataset on ClickHouse Playground, added by zX41ZdbW `hackernews_history` is used. 
 
 Free users of the playground cannot create tables, so we have to change the example query to use sub queries but substantially it's similar. 
 
@@ -27,15 +30,17 @@ Only users with comments before Jan 2023 (mass adoption of LLMs) are counted.
 
 Users must be somewhat active users. 
 
-It counts how many words users make in a 6 month blocks. Users must have at least three 6 month blocks before and after 2023 where they have written more than 500 words. 
+It counts how many words users make in blocks of every half year (6 months). Users should have written more than 500 words in each half year block.
 
-There are two queries: for a specific user, and for a batch of users. There is a python script that performs batches and then merges together the results, giving a final top_100.csv file of the users most likely to have changed style from before and after 2023. 
+There are two queries: for a specific user, and for a batch of users.  There is a python script that performs batches and then merges together the results, giving a final top_100.csv file of the users most likely to have changed style from before and after 2023. 
 
 For a specific user, a cumulative score of before 2023 is calculated and the output shows each active 6 month block before and after and gives similarity to that.
 
+For the batch of users, a slightly different calculation is given in which users must have at least three 6 month blocks before and after 2023 where they have written more than 500 words. 
+
 The thumbnail / stylometric method used here is simple. Better methods could and should be used. 
 
-For example, Burrows Delta calculates a reference text distribution. For example from all comments from all users and that method would be good to see which users are most similar to other users. Ideally we want to determine two things, did the user change their writing and is the new writing identified as LLM text, so any similarity method can only really help with the former. 
+For example, Burrows Delta calculates a reference text distribution. For example we could create a baseline distribution from all comments from all users and then that method would be good to see which users are most similar to other users. Ideally we want to determine two things, did the user change their writing and is the new writing identified as LLM text, so any similarity method can only really help with the former. 
 
 ## Results individual 
 
@@ -46,7 +51,7 @@ outlining how to interpret own users data
 See the `top_100.csv` file. 
 
 CAVEAT: This data is almost probably wrong and should not imply anything about the users in general or any specific user. 
-CAVEAT: People should adapt and investigate themselves if they want to take this further.  I am no expert in stylometry or LLM detection, or even performant SQL for that matter!
+CAVEAT: People should adapt and investigate themselves if they want to take this further.  I am no expert in stylometry or LLM detection, or even performant SQL for that matter.
 
 Overall, it looks like most active users are not using LLMs.
 
@@ -74,8 +79,16 @@ Change in topics. Since 2023 was a watershed moment, the topics that were discus
 
 Change in usage: Some types of comments, like the replies under "Ask HN: Who Wants To Be Hired" posts are formatted differently than usual comments and people will use different words. So if a user talked normally before and is now just using it to find jobs, it would probably show this change. I also saw similar things with Show HN's. Users also appear to be posting to hire people where before they may have been commenting normally and vice versa. As users grow into greybeards they may promote their projects or stop doing so.  Additionally many of the top users are changed their usage into being helpful users, showing duplication submissions, links to archives, messages about the guidelines etc. 
 
-## My own LLM usage for this project:
+## TODO
+
+Some things to do to make it more useful: 
+
+* Allow users to change the cutoff date for the queries.
+* Automatically detect dates of any major changes in writing styles.  
+* Use a better fingerprinting / stylometric algorithm.
+
+## My own LLM usage for this project
 
 I used gtp-6.1-sol to help write the sql queries, the python batch script and the javascript in the html files. Totalling about 30 requests and 290K tokens spent 
 
-I don't use LLM to write HN comments, and this readme is 100% my own words :smile:
+I don't use LLM to write HN comments, and this readme is 100% my own words too! :smile:
