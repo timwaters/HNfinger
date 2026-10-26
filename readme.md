@@ -2,6 +2,8 @@
 
 An investigation into whether its possible to detect if a user has changed their writing style.  Could this be a potential method to detect users using LLM?  Or maybe just useful way to gain insight into how users change how they write? Given enough words a body of text can be "fingerprinted"  - in better detail this is also known as "stylometry" - the measurement of a writing style, but in this study it's a bit more simple.  Can we detect if fingerprints change over time? 
 
+Overall, it looks like most active users are not using LLMs but there are patterns of legitimate usage that might be shown. 
+
 ![](site/screen.png):
 
 ## About
@@ -43,9 +45,12 @@ The thumbnail / stylometric method used here is simple. Better methods could and
 
 For example, Burrows Delta calculates a reference text distribution. For example we could create a baseline distribution from all comments from all users and then that method would be good to see which users are most similar to other users. Ideally we want to determine two things, did the user change their writing and is the new writing identified as LLM text, so any similarity method can only really help with the former. 
 
-## Results individual 
+## Results  
 
-outlining how to interpret own users data
+For a user, the table will give a similarity score and difference to a baseline of "before 2023". The larger the difference and the lower the similarity, the bigger the difference in the type of words used before and after. There are scores for each first and last half year periods too, as well as the number of tokens where 1 token is pretty much equal to 1 word.
+
+
+For the top 100 users, it shows the number of first or last half year periods, the number of tokens pre and post 2023 and the similarity and difference compared to the 2023 baseline
 
 ## Results Top 100
 
