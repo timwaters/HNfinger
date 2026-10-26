@@ -2,6 +2,7 @@
 
 An investigation into whether its possible to detect if a user has changed their writing style.  Could this be a potential method to detect users using LLM?  Or maybe just useful way to gain insight into how users change how they write? Given enough words a body of text can be "fingerprinted"  - in better detail this is also known as "stylometry" - the measurement of a writing style, but in this study it's a bit more simple.  Can we detect if fingerprints change over time? 
 
+![](site/screen.png):
 
 ## About
 
