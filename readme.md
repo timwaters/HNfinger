@@ -4,7 +4,11 @@ An investigation into whether its possible to detect if a user has changed their
 
 Overall, it looks like most active users are not using LLMs but there are patterns of legitimate usage that might be shown. 
 
-![](site/screen.png):
+![](site/screen.png)
+
+Blog Post: https://thinkwhere.wordpress.com/2026/10/26/investigating-if-the-writing-style-of-users-on-hackernews-has-changed-since-the-advent-of-llms/
+
+Interactive site: https://timwaters.github.io/HNfinger/
 
 ## About
 
